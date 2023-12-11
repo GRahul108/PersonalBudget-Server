@@ -9,10 +9,18 @@ const bodyParser = require("body-parser");
 const SignupSchema = require("./models/SignupModel");
 const BudgetSchema = require("./models/BudgetModel");
 const ExpenseSchema = require("./models/ExpenseModel");
-let url = "mongodb://127.0.0.1:27017/personal-budget";
+const {config}=require("dotenv")
+config();
+
+
+let DB_URL = process.env.DB_URL;
+
+
+
+
 
 const bcrypt = require("bcrypt");
-const port = 3002;
+const port = process.env.PORT || 3002;
 const budget = require("./server.json");
 
 app.use(cors());
@@ -20,11 +28,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(compression());
 
-mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
-const secretkey='This is my key'
+mongoose.connect(DB_URL);
+const secretKey = process.env.SECRET_KEY || 'This is my key';
 
 const jwtmw = exjwt({
-  secret: secretkey,
+  secret: secretKey,
   algorithms: ["HS256"],
 });
 
@@ -37,10 +45,7 @@ async function encryptPassword(password) {
 
 
 
-app.use("/", express.static("public"));
-app.get("/intro", (req, res) => {
-  res.send("Hello world");
-});
+
 
 app.get("/budget", (req, res) => {
   res.json(budget);
@@ -104,7 +109,7 @@ app.get('/get-expenses/:userId', jwtmw, async (req, res) => {
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, username: user.username },
-    secretkey,
+    secretKey,
     { expiresIn: "1m" }
   );
 };
@@ -118,18 +123,11 @@ app.post("/login", async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
-    // if(user) {
-    //   localStorage.setItem('userId', user._id.toString());
-    // }
+   
     const passwordMatch = await bcrypt.compare(password, user.Password);
-   // console.log("HERE compared password OF USER", user._id);
+  
     if (passwordMatch) {
-     // console.log("HERE sending response", user);
-    //  let token = jwt.sign(
-    //   { id: user._id, username: user.username },
-    //   secretkey,
-    //   { expiresIn: "60s" }
-    // );
+  
     let token = generateToken(user);
       return res.json({ success: true, message: "Login successful", user: user ,token:token});
     } else {
@@ -221,6 +219,8 @@ app.post("/refresh-token/:userId",async(req,res)=>{
   res.json({token:newtoken})
 })
 
-app.listen(port, () => {
+const server= app.listen(port, () => {
   console.log(`API served at http://localhost:${port}`);
 });
+
+module.exports={server,app}
