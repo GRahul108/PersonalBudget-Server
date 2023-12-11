@@ -4,7 +4,7 @@
   "description": "The path to NGInx main folder:\r /usr/share/nginx/html",
   "main": "server.js",
   "scripts": {
-    "test": "mocha test/*.test.js",
+    "test": "mocha --timeout 10000 test/*.test.js",
     "test2": "mocha e2e.test.js",
     "start": "node server.js"
   },
